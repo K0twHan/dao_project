@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script src="https://unpkg.com/@solana/web3.js@1.33.0/lib/index.iife.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Sayfası</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .navbar {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>Belediye-Dao Yönetim Paneli</h2>
+</div>
+
+<div class="container">
+    <h3>Form</h3>
+    <form id="myForm">
+        <div class="form-group">
+            <label for="name">İsim:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Açıklama:</label>
+            <textarea id="description" name="description" rows="5" required></textarea>
+        </div>
+        <button type="button" class="btn" onclick="connectWallet()">Bağlan</button>
+        <button type="button" class="btn" onclick="sendTransaction()">Gönder</button>
+    </form>
+</div>
+
+<script>
+    var wallet;
+    function connectWallet() {
+        (async () => {
+            try {
+                wallet = await window.solana.connect();
+                alert("Cüzdan bağlandı!");
+            } catch (err) {
+                console.log(err);
+                alert("Cüzdan bağlantısı başarısız oldu!");
+            }
+        })();
+    }
+
+    async function sendTransaction() {
+        try {
+            if (!wallet) {
+                alert("Lütfen önce cüzdan bağlantısını yapın!");
+                return;
+            }
+
+            // Form verilerini al
+            var name = document.getElementById("name").value;
+            var description = document.getElementById("description").value;
+
+            // Hedef Solana adresi
+            var receiverAddress = "39QcE4gSNztpjvq78aa45W6J9Pn551is52C2XxhSsDTR";
+
+            // Gönderilecek miktar
+            var solAmount = 0.2;
+
+            // Solana'ya bağlan
+            var connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"));
+
+            // Son blokhash'i al
+            var blockhash = await connection.getRecentBlockhash();
+            
+            // Gönderim işlemi
+            const transaction = new solanaWeb3.Transaction({
+                recentBlockhash: blockhash.blockhash,
+                feePayer: wallet.publicKey // Ücret ödeyen belirtildi
+            }).add(
+                solanaWeb3.SystemProgram.transfer({
+                    fromPubkey: wallet.publicKey,
+                    toPubkey: new solanaWeb3.PublicKey(receiverAddress),
+                    lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
+                })
+            );
+            
+            // İşlemi imzala
+            const signature = await window.solana.signAndSendTransaction(transaction);
+            // Başarılı işlem bildirimi
+            alert("İsim: " + name + "\nAçıklama: " + description + "\nGönderim Başarılı! İşlem İmzası: " + signature);
+        } catch (error) {
+            console.error(error);
+            alert("Gönderim işlemi başarısız oldu!");
+        }
+    }
+</script>
+
+</body>
+</html>
